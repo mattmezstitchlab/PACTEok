@@ -1,0 +1,10 @@
+import supabase from './db-client.js';
+import {cors,identity,fail,bad,emailOf} from './_shared.js';
+export default async function handler(req,res){if(cors(req,res))return;const user=await identity(req,res);if(!user)return;try{
+ if(req.method==='GET'){const {data:pacts,error:e}=await supabase.from('pacts').select('id').or(`client_user_id.eq.${user.id},provider_email.eq.${emailOf(user)}`);if(e)throw e;if(!pacts.length)return res.status(200).json([]);const {data,error}=await supabase.from('payments').select('*').in('pact_id',pacts.map(p=>p.id)).order('created_at');if(error)throw error;return res.status(200).json(data)}
+ const {pact_id,id}=req.body||{};let target=pact_id;if(req.method==='PUT'||req.method==='DELETE'){const {data:row}=await supabase.from('payments').select('pact_id').eq('id',id||'00000000-0000-0000-0000-000000000000').maybeSingle();target=row?.pact_id}const {data:p}=await supabase.from('pacts').select('*').eq('id',target||'00000000-0000-0000-0000-000000000000').maybeSingle();if(!p||!(p.client_user_id===user.id||p.provider_email===emailOf(user)))return res.status(403).json({error:'Accès refusé.'});if(p.status!=='signed')return bad(res,'Les paiements sont suivis après signature.');
+ if(req.method==='POST'){const {label,amount,due_date}=req.body||{};if(!label?.trim()||!Number.isFinite(Number(amount))||Number(amount)<=0)return bad(res,'Intitulé et montant positif requis.');const {data,error}=await supabase.from('payments').insert({pact_id:target,label:label.trim(),amount:Number(amount),due_date:due_date||null,status:'pending'}).select('*').single();if(error)throw error;return res.status(201).json(data)}
+ if(req.method==='PUT'){const {status}=req.body||{};if(!['pending','paid'].includes(status))return bad(res,'Statut invalide.');const {data,error}=await supabase.from('payments').update({status}).eq('id',id).select('*').single();if(error)throw error;return res.status(200).json(data)}
+ if(req.method==='DELETE'){const {error}=await supabase.from('payments').delete().eq('id',id);if(error)throw error;return res.status(200).json({ok:true})}
+ return res.status(405).json({error:'Méthode non autorisée.'});
+ }catch(e){fail(res,e)}}
