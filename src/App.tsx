@@ -18,53 +18,268 @@ const requestLabels:Record<string,string>={cancellation:'Annulation',reschedule:
 async function api<T=any>(path:string,method='GET',body?:unknown):Promise<T>{const {data:{session}}=await supabase.auth.getSession();const res=await fetch('/api/'+path,{method,headers:{'Content-Type':'application/json',Authorization:`Bearer ${session?.access_token||''}`},body:body?JSON.stringify(body):undefined});const data=await res.json();if(!res.ok)throw new Error(data.error||'Une erreur est survenue.');return data}
 function Brand(){return <Link to="/" className="brand"><span className="brand-mark"><span/></span>PACTE<span className="brand-period">.</span></Link>}
 function Shell({children,user,onSignOut}:{children:React.ReactNode;user?:User|null;onSignOut?:()=>void}){const [menu,setMenu]=useState(false);return <><header className="site-header"><div className="header-inner"><Brand/><nav className={menu?'header-nav open':'header-nav'}>{user?<><Link to="/espace" onClick={()=>setMenu(false)}>Mon espace</Link><Link to="/prestataire" onClick={()=>setMenu(false)}>Espace prestataire</Link><span className="nav-email">{user.email}</span><button className="nav-logout" onClick={onSignOut} aria-label="Se déconnecter"><LogOut size={17}/></button></>:<><Link to="/connexion?role=couple" onClick={()=>setMenu(false)}>Espace mariés</Link><Link to="/connexion?role=provider" onClick={()=>setMenu(false)}>Espace prestataire</Link></>}</nav><button className="mobile-menu" onClick={()=>setMenu(!menu)} aria-label="Ouvrir le menu"><Menu size={22}/></button></div></header>{children}<footer className="footer"><div className="footer-inner"><div><Brand/><p>Contrat. Timeline. PACTE.</p></div><p>PACTE structure et suit les engagements. Il ne garantit pas leur portée ou leur issue juridique.</p><span>© 2026 PACTE</span></div></footer></>}
+/* ---------- Aperçus de l’application réelle, rendus dans un cadre iPhone ----------
+   Le contenu de ces écrans reprend les vrais libellés, statuts et sections de
+   l’application (voir PactPage, WeddingPage, PactForm et api/weddings.js).      */
+function Phone({children,className=''}:{children:React.ReactNode;className?:string}){
+  return <div className={'phone '+className}><div className="phone-screen">{children}</div></div>;
+}
+function ScrBar(){return <div className="scr-bar"><span>9:41</span><i>▮▮▮</i></div>}
+function ScrNav(){return <div className="scr-nav"><span className="scr-brand"><b/>PACTE<i>.</i></span><span className="scr-avatar"/></div>}
+
+function ScreenTimeline(){
+  return <><ScrBar/><ScrNav/><div className="scr-body">
+    <div className="scr-kicker">Le mariage</div>
+    <div className="scr-h1">Camille & Alex</div>
+    <div className="scr-meta">19 juin 2027 · Domaine de Vaux</div>
+    <div className="scr-tabs"><b>Timeline</b><span>PACTEs</span><span>Prestataires</span></div>
+    {[['10:00','Préparatifs','Moment de la journée',false],
+      ['12:00','Cérémonie','Moment de la journée',false],
+      ['14:00','Reportage photo','Studio Lumière · 14:00 – 21:00',true],
+      ['19:30','Dîner','Moment de la journée',false]].map(([t,title,sub,signed],i,a)=>
+      <div className="scr-row" key={t as string}>
+        <div className="scr-time">{t}</div>
+        <div className="scr-track"><span className={signed?'scr-dot on':'scr-dot'}/>{i<a.length-1&&<span className="scr-line"/>}</div>
+        <div className="scr-entry">
+          <div><strong>{title}</strong><small>{sub}</small></div>
+          {signed?<span className="scr-tag"><LockKeyhole size={8}/> PACTE signé</span>:null}
+        </div>
+      </div>)}
+  </div></>;
+}
+
+function ScreenPact(){
+  return <><ScrBar/>
+    <div className="scr-doc-top"><span className="scr-brand"><b/>PACTE<i>.</i></span><span className="scr-pill scr-pill-ok">Signé</span></div>
+    <div className="scr-sec">
+      <div className="scr-kicker">02 / La prestation</div>
+      <div className="scr-h2">Reportage photo</div>
+      <p>De la cérémonie au dîner. Galerie livrée sous 30 jours.</p>
+      <div className="scr-facts">
+        <div><small>Date</small><strong>19 juin 2027</strong></div>
+        <div><small>Horaires</small><strong>14:00 – 21:00</strong></div>
+      </div>
+    </div>
+    <div className="scr-sec">
+      <div className="scr-kicker">03 / Conditions financières</div>
+      <div className="scr-amount"><span>Montant convenu</span><b>2 400 €</b></div>
+      <div className="scr-amount sec"><span>Acompte prévu</span><b>600 €</b></div>
+    </div>
+    <div className="scr-sec">
+      <div className="scr-kicker">04 / Validations</div>
+      <div className="scr-sigs">
+        <div className="ok"><small>Le couple</small><strong>Signé</strong></div>
+        <div className="ok"><small>Le prestataire</small><strong>Signé</strong></div>
+      </div>
+    </div>
+    <div className="scr-foot"><LockKeyhole size={9}/> Document de suivi des engagements.</div>
+  </>;
+}
+
+function ScreenPactList(){
+  return <><ScrBar/><ScrNav/><div className="scr-body">
+    <div className="scr-kicker">Vos engagements</div>
+    <div className="scr-h1">Les PACTEs</div>
+    <div className="scr-list">
+      {[['Reportage photo','Studio Lumière','Signé','ok'],
+        ['DJ & sonorisation','Nuit Sonore','Signature du prestataire attendue','wait'],
+        ['Fleurs & décoration','Atelier Camélia','À confirmer','wait'],
+        ['Traiteur','Maison Berger','Signé','ok']].map(([t,who,st,kind])=>
+        <div className="scr-li" key={t as string}>
+          <span className="scr-ico"><FileText size={12}/></span>
+          <span className="scr-li-info"><strong>{t}</strong><small>{who}</small></span>
+          <span className={kind==='ok'?'scr-pill scr-pill-ok':'scr-pill scr-pill-wait'}>{st}</span>
+        </div>)}
+    </div>
+  </div></>;
+}
+
+function ScreenProvider(){
+  return <><ScrBar/><ScrNav/><div className="scr-body">
+    <div className="scr-kicker">Espace prestataire</div>
+    <div className="scr-h1">Vos engagements</div>
+    <div className="scr-banner">
+      <Bell size={13}/>
+      <span><strong>1 action à effectuer</strong><small>Un PACTE attend votre signature.</small></span>
+    </div>
+    <div className="scr-list">
+      {[['Reportage photo','Camille & Alex · 19 juin 2027','À confirmer','wait'],
+        ['Séance engagement','Léa & Sam · 4 sept. 2027','Signé','ok'],
+        ['Reportage complet','Inès & Théo · 11 sept. 2027','Signé','ok']].map(([t,who,st,kind])=>
+        <div className="scr-li" key={who as string}>
+          <span className="scr-ico"><CalendarDays size={12}/></span>
+          <span className="scr-li-info"><strong>{t}</strong><small>{who}</small></span>
+          <span className={kind==='ok'?'scr-pill scr-pill-ok':'scr-pill scr-pill-wait'}>{st}</span>
+        </div>)}
+    </div>
+  </div></>;
+}
+
+function ScreenForm(){
+  return <><ScrBar/>
+    <div className="scr-doc-top"><span className="scr-h2" style={{margin:0}}>Nouveau PACTE</span><X size={13}/></div>
+    <div className="scr-body">
+      <p style={{fontSize:'8.5px',color:'var(--muted)',lineHeight:1.5}}>Le PACTE est une proposition. Il n’entre dans les Timelines qu’après les deux signatures.</p>
+      <div className="scr-field"><label>Nom du prestataire</label><div className="scr-input">Studio Lumière</div></div>
+      <div className="scr-field"><label>Prestation</label><div className="scr-input">Reportage photo de la journée</div></div>
+      <div className="scr-field scr-cols">
+        <div><label>Début</label><div className="scr-input">14:00</div></div>
+        <div><label>Fin</label><div className="scr-input">21:00</div></div>
+      </div>
+      <div className="scr-field scr-cols">
+        <div><label>Montant convenu (€)</label><div className="scr-input">2400</div></div>
+        <div><label>Acompte prévu (€)</label><div className="scr-input">600</div></div>
+      </div>
+      <div className="scr-cta">Créer la proposition</div>
+    </div>
+  </>;
+}
+
 function Home({user}:{user:User|null}){
   const coupleHref=user?'/espace':'/connexion?role=couple';
   const providerHref=user?'/prestataire':'/connexion?role=provider';
   return <Shell user={user} onSignOut={()=>supabase.auth.signOut()}>
+
     <main className="hero">
       <div className="hero-inner">
-        <span className="eyebrow"><span className="tiny-dot"/>Contrat + jour J</span>
-        <h1>Un accord.<br/>Un jour J.<br/><em>Un seul endroit.</em></h1>
-        <p className="hero-sub">PACTE réunit l’accord de prestation et le déroulé du jour J. Une prestation n’apparaît dans la Timeline qu’une fois signée par le couple et par le prestataire.</p>
-        <div className="hero-actions">
-          <Link className="btn btn-dark" to={coupleHref}>Créer mon mariage <ArrowRight size={17}/></Link>
-          <Link className="btn btn-outline" to={providerHref}>Je suis prestataire</Link>
+        <div className="hero-copy">
+          <span className="eyebrow"><span className="tiny-dot"/>Contrat + jour J</span>
+          <h1>Un accord.<br/>Un jour J.<br/><em>Un seul endroit.</em></h1>
+          <p className="hero-sub">L’accord de prestation et le déroulé du jour J, dans la même application. Une prestation n’entre dans la Timeline qu’une fois signée des deux côtés.</p>
+          <div className="hero-actions">
+            <Link className="btn btn-dark" to={coupleHref}>Créer mon mariage <ArrowRight size={17}/></Link>
+            <Link className="btn btn-outline" to={providerHref}>Je suis prestataire</Link>
+          </div>
+          <div><Link className="received-link" to={providerHref}>J’ai reçu un PACTE <ChevronRight size={15}/></Link></div>
         </div>
-        <div><Link className="received-link" to={providerHref}>J’ai reçu un PACTE <ChevronRight size={15}/></Link></div>
-        <p className="hero-note">PACTE ne traite aucun paiement. Les signatures sont des validations horodatées dans l’application, pas des signatures électroniques qualifiées.</p>
+        <div className="hero-stage">
+          <span className="hero-blob hero-blob-1"/>
+          <span className="hero-blob hero-blob-2"/>
+          <Phone className="phone-a"><ScreenTimeline/></Phone>
+          <Phone className="phone-b"><ScreenPact/></Phone>
+        </div>
       </div>
     </main>
-    <section className="cycle">
-      <div className="cycle-inner">
-        <span className="section-index">Le cycle d’un PACTE</span>
-        <h2>Trois états, et un seul qui engage.</h2>
-        <ol className="cycle-rail">
-          <li className="cycle-step"><span className="cycle-num">01</span><h3>Proposé</h3><p>Une partie décrit la prestation, les horaires et le montant. Rien n’est engagé, rien n’apparaît au planning.</p></li>
-          <li className="cycle-step"><span className="cycle-num">02</span><h3>En attente</h3><p>La première signature est enregistrée et horodatée. L’accord attend la seconde pour exister.</p></li>
-          <li className="cycle-step is-final"><span className="cycle-num">03</span><h3>Signé</h3><p>Les deux signatures sont là. La prestation rejoint la Timeline du couple et celle du prestataire.</p></li>
-        </ol>
+
+    <section className="statement">
+      <div className="statement-inner">
+        <div className="statement-icons"><span><FileText size={19}/></span><span><CalendarDays size={19}/></span></div>
+        <p>PACTE tient deux choses au même endroit : l’accord signé entre le couple et le prestataire, <span className="dim">et le déroulé du jour J qui en découle.</span></p>
       </div>
     </section>
-    <section className="principle">
-      <div className="principle-inner">
-        <span className="section-index">Ce que l’application applique</span>
-        <h2>Ce qui est signé <span>ne bouge plus.</span></h2>
-        <div className="principle-grid">
-          <div><span className="step-number">01</span><h3>Un PACTE signé est figé</h3><p>Aucune modification directe n’est possible. Pour changer les conditions, on crée une nouvelle version : l’originale reste intacte jusqu’aux deux nouvelles signatures.</p></div>
-          <div><span className="step-number">02</span><h3>Les chevauchements sont refusés</h3><p>À la signature, PACTE vérifie les autres engagements signés du prestataire à la même date et bloque tout conflit d’horaire.</p></div>
-          <div><span className="step-number">03</span><h3>Rien ne change seul</h3><p>Report, modification, annulation : chaque demande doit être acceptée par l’autre signataire. Personne ne valide sa propre demande.</p></div>
+
+    <div className="display-head"><h2>Signer<span className="dh-dot dh-mint"/><br/>ensemble</h2></div>
+
+    <section className="band band-mint">
+      <div className="band-inner">
+        <div className="band-intro">
+          <span className="band-label">Le PACTE</span>
+          <h3>Un accord, deux signatures.</h3>
+          <p>Tant qu’il en manque une, rien n’est engagé.</p>
+        </div>
+
+        <div className="feature">
+          <div className="feature-media"><Phone><ScreenForm/></Phone></div>
+          <div className="feature-copy">
+            <h4>Proposez.<br/><span>En quelques champs.</span></h4>
+            <p>La prestation, les horaires, le montant et l’acompte. Le couple comme le prestataire peuvent être à l’initiative de l’accord.</p>
+          </div>
+        </div>
+
+        <div className="feature reverse">
+          <div className="feature-media"><Phone><ScreenPact/></Phone></div>
+          <div className="feature-copy">
+            <h4>Signé des deux côtés,<br/><span>ou rien du tout.</span></h4>
+            <p>Chaque signature est horodatée. Une fois les deux enregistrées, le document est figé : plus aucune modification directe n’est possible.</p>
+          </div>
+        </div>
+
+        <div className="feature">
+          <div className="feature-media"><Phone><ScreenPactList/></Phone></div>
+          <div className="feature-copy">
+            <h4>Chaque statut<br/><span>est dit clairement.</span></h4>
+            <p>À confirmer, signature attendue, signé, annulé. Personne n’a besoin de relancer pour savoir où en est un accord.</p>
+          </div>
         </div>
       </div>
     </section>
-    <section className="closing">
-      <div className="closing-inner">
-        <div className="closing-icon"><Heart size={22}/></div>
-        <h2>Moins de flou.<br/>Plus de <i>oui.</i></h2>
-        <Link to={coupleHref} className="btn btn-dark">Commencer avec PACTE <ArrowRight size={17}/></Link>
+
+    <div className="display-head"><h2>Suivre<span className="dh-dot dh-blush"/><br/>le jour J</h2></div>
+
+    <section className="band band-blush">
+      <div className="band-inner">
+        <div className="band-intro">
+          <span className="band-label">La Timeline</span>
+          <h3>Le déroulé se remplit tout seul.</h3>
+          <p>Un PACTE signé devient une ligne de la journée.</p>
+        </div>
+
+        <div className="feature">
+          <div className="feature-media"><Phone><ScreenTimeline/></Phone></div>
+          <div className="feature-copy">
+            <h4>Le jour J,<br/><span>heure par heure.</span></h4>
+            <p>Vos moments et vos prestations signées sur une seule ligne de temps. Les propositions non signées n’y figurent pas.</p>
+          </div>
+        </div>
+
+        <div className="feature reverse">
+          <div className="feature-media"><Phone><ScreenProvider/></Phone></div>
+          <div className="feature-copy">
+            <h4>Côté prestataire<br/><span>aussi.</span></h4>
+            <p>Le prestataire retrouve ses engagements signés, toutes dates confondues, et ce qui attend encore sa signature.</p>
+          </div>
+        </div>
       </div>
     </section>
-  </Shell>
+
+    <section className="why">
+      <div className="why-inner">
+        <h2>Pourquoi PACTE</h2>
+        <div className="why-grid">
+          <div className="why-card">
+            <div className="why-visual why-v-mint"><div className="mini-stack">
+              <div className="mini-chip"><div className="mini-row"><span>Le couple</span><strong>Signé</strong></div><div className="mini-row"><span>Le prestataire</span><strong>Signé</strong></div></div>
+            </div></div>
+            <div className="why-body"><h3>Ce qui est signé ne bouge plus</h3><p>Un PACTE signé ne peut pas être modifié directement. Changer les conditions crée une nouvelle version ; l’originale reste intacte jusqu’aux deux nouvelles signatures.</p></div>
+          </div>
+          <div className="why-card">
+            <div className="why-visual why-v-blush"><div className="mini-stack">
+              <div className="mini-chip"><div className="mini-row"><span>14:00 – 21:00</span><strong>Reportage photo</strong></div></div>
+              <div className="mini-chip"><div className="mini-row"><span>18:00 – 23:00</span><strong style={{color:'var(--danger)'}}>Conflit d’horaire</strong></div></div>
+            </div></div>
+            <div className="why-body"><h3>Pas de double réservation</h3><p>À la signature, PACTE compare les autres engagements signés du prestataire à la même date et refuse tout chevauchement de créneau.</p></div>
+          </div>
+          <div className="why-card">
+            <div className="why-visual why-v-sand"><div className="mini-stack">
+              <div className="mini-chip"><div className="mini-row"><span>Demande de report</span><span className="scr-pill scr-pill-wait">En attente</span></div><div className="mini-row"><span>Réponse</span><strong>L’autre partie</strong></div></div>
+            </div></div>
+            <div className="why-body"><h3>Rien ne change tout seul</h3><p>Report, modification, annulation : chaque demande doit être acceptée par l’autre signataire. Personne ne valide sa propre demande.</p></div>
+          </div>
+          <div className="why-card">
+            <div className="why-visual why-v-ink"><div className="mini-stack">
+              <div className="mini-chip"><div className="mini-row"><span>Acompte</span><strong>600 €</strong></div><div className="mini-row"><span>Solde</span><strong>1 800 €</strong></div></div>
+            </div></div>
+            <div className="why-body"><h3>Les jalons au clair</h3><p>Suivez ce qui est réglé et ce qui reste dû, jalon par jalon. PACTE ne traite aucun paiement : il ne fait que le suivi.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="how">
+      <div className="how-inner">
+        <h2>Comment ça tient</h2>
+        <div className="how-grid">
+          <div className="how-card"><span><ShieldCheck size={17}/></span><h3>Double signature</h3><p>Aucun accord n’existe tant que les deux parties n’ont pas validé.</p></div>
+          <div className="how-card"><span><Clock3 size={17}/></span><h3>Horodatage</h3><p>Chaque validation est enregistrée avec sa date et son heure.</p></div>
+          <div className="how-card"><span><Link2 size={17}/></span><h3>Code de mariage</h3><p>Un prestataire rejoint un mariage avec le code transmis par le couple.</p></div>
+          <div className="how-card"><span><LockKeyhole size={17}/></span><h3>Versions successives</h3><p>Une nouvelle version remplace l’ancienne seulement une fois signée.</p></div>
+        </div>
+        <div className="how-cta"><Link className="btn btn-dark" to={coupleHref}>Commencer avec PACTE <ArrowRight size={17}/></Link></div>
+      </div>
+    </section>
+
+    <div className="wordmark"><span>PACTE</span></div>
+  </Shell>;
 }
 function Auth({user}:{user:User|null}){const nav=useNavigate();const params=new URLSearchParams(location.search);const role=params.get('role')==='provider'?'provider':'couple';const next=params.get('next');const [signup,setSignup]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[success,setSuccess]=useState('');useEffect(()=>{if(user)nav(next&&next.startsWith('/')?next:role==='provider'?'/prestataire':'/espace',{replace:true})},[user,nav,role,next]);async function submit(e:React.FormEvent){e.preventDefault();setError('');setSuccess('');if(!email.includes('@'))return setError('Saisissez une adresse e-mail valide.');if(password.length<6)return setError('Le mot de passe doit contenir au moins 6 caractères.');setBusy(true);const {data,error:err}=signup?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});setBusy(false);if(err)setError(err.message);else if(signup&&!data.session)setSuccess('Compte créé. Consultez votre e-mail pour confirmer votre adresse.');else nav(next&&next.startsWith('/')?next:role==='provider'?'/prestataire':'/espace')}
 return <Shell user={user}><main className="auth-layout"><div className="auth-intro"><span className="eyebrow">BIENVENUE SUR PACTE</span><h1>{role==='provider'?'Vos prestations, au clair.':'Votre mariage, l’esprit clair.'}</h1><p>Un espace simple pour vos accords et votre jour J. Ce qui est signé est ce qui compte.</p><div className="auth-deco"><span className="deco-line"/><span>UN ACCORD. DEUX SIGNATURES.</span></div></div><div className="auth-card"><div className="auth-icon">{role==='provider'?<BriefcaseBusiness size={22}/>:<Heart size={22}/>}</div><h2>{signup?'Créer mon compte':'Ravi de vous revoir.'}</h2><p>{role==='provider'?'Espace prestataire':'Espace mariage'} · {signup?'Rejoignez PACTE en quelques secondes.':'Connectez-vous pour continuer.'}</p><form onSubmit={submit}><label>Adresse e-mail<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vous@exemple.fr" required/></label><label>Mot de passe<input type="password" autoComplete={signup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="6 caractères minimum" required minLength={6}/></label>{error&&<div className="alert error"><AlertCircle size={16}/>{error}</div>}{success&&<div className="alert success"><Check size={16}/>{success}</div>}<button className="btn btn-dark full" disabled={busy}>{busy?'Un instant…':signup?'Créer mon compte':'Se connecter'} <ArrowRight size={17}/></button></form><div className="auth-divider">ou</div><button className="btn btn-google full" onClick={()=>{if(!signInWithGoogle())setError('Connexion Google indisponible pour le moment. Utilisez votre adresse e-mail.')}}><span className="google-g">G</span> Continuer avec Google</button><div className="auth-switch">{signup?'Déjà un compte ?':'Pas encore de compte ?'} <button onClick={()=>{setSignup(!signup);setError('');setSuccess('')}}>{signup?'Se connecter':'Créer un compte'}</button></div></div></main></Shell>}
