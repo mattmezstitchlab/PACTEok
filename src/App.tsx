@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Plus, Check, Clock3, CalendarDays, MapPin, Copy, X, ChevronRight, PenLine, Bell, ShieldCheck, LogOut, BriefcaseBusiness, Heart, Link2, AlertCircle, Trash2, CheckCircle2, Menu, FileText, LockKeyhole } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
@@ -135,6 +135,74 @@ function ScreenForm(){
   </>;
 }
 
+/* Objet de marque du héros : carte en dégradé avec une légère inclinaison 3D
+   suivant la souris. Volontairement abstrait — il ne simule aucun document réel. */
+function PacteCard(){
+  const ref=useRef<HTMLDivElement|null>(null);
+  useEffect(()=>{
+    const el=ref.current;
+    if(!el) return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if(window.matchMedia('(hover: none)').matches) return;
+    const onMove=(e:MouseEvent)=>{
+      const dx=(e.clientX-window.innerWidth/2)/(window.innerWidth/2);
+      const dy=(e.clientY-window.innerHeight/2)/(window.innerHeight/2);
+      el.style.setProperty('--ry',(dx*11).toFixed(2)+'deg');
+      el.style.setProperty('--rx',(dy*-8).toFixed(2)+'deg');
+    };
+    window.addEventListener('mousemove',onMove,{passive:true});
+    return()=>window.removeEventListener('mousemove',onMove);
+  },[]);
+  return <div className="pacte-card" ref={ref}>
+    <div className="pacte-card-inner">
+      <div className="pc-top"><span className="pc-brand"><b/>PACTE<i>.</i></span><span className="pc-chip"/></div>
+      <div className="pc-foot">
+        <span><Check size={11}/> Le couple</span>
+        <span><Check size={11}/> Le prestataire</span>
+      </div>
+    </div>
+  </div>;
+}
+
+/* Bande à défilement : le téléphone reste fixé pendant que les blocs de texte
+   défilent, et l'écran affiché change au passage de chaque bloc. */
+type Step={title:React.ReactNode;body:string;screen:React.ReactNode};
+function StickyBand({tone,label,title,intro,steps,reverse}:{tone:'mint'|'blush';label:string;title:string;intro:string;steps:Step[];reverse?:boolean}){
+  const [active,setActive]=useState(0);
+  const refs=useRef<(HTMLDivElement|null)[]>([]);
+  useEffect(()=>{
+    const els=refs.current.filter(Boolean) as HTMLDivElement[];
+    if(!els.length||typeof IntersectionObserver==='undefined') return;
+    const io=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{ if(e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.i)); });
+    },{rootMargin:'-45% 0px -45% 0px'});
+    els.forEach(el=>io.observe(el));
+    return()=>io.disconnect();
+  },[]);
+  return <section className={'band band-'+tone}>
+    <div className="band-inner">
+      <div className="band-intro">
+        <span className="band-label">{label}</span>
+        <h3>{title}</h3>
+        <p>{intro}</p>
+      </div>
+      <div className={reverse?'sticky-band rev':'sticky-band'}>
+        <div className="sticky-media">
+          <Phone>{steps.map((s,i)=><div key={i} className={i===active?'scr-layer on':'scr-layer'} aria-hidden={i!==active}>{s.screen}</div>)}</Phone>
+        </div>
+        <div className="sticky-steps">
+          {steps.map((s,i)=>
+            <div key={i} data-i={i} ref={el=>{refs.current[i]=el}} className={i===active?'sticky-step on':'sticky-step'}>
+              <div className="sticky-step-phone"><Phone>{s.screen}</Phone></div>
+              <h4>{s.title}</h4>
+              <p>{s.body}</p>
+            </div>)}
+        </div>
+      </div>
+    </div>
+  </section>;
+}
+
 function Home({user}:{user:User|null}){
   const coupleHref=user?'/espace':'/connexion?role=couple';
   const providerHref=user?'/prestataire':'/connexion?role=provider';
@@ -157,6 +225,7 @@ function Home({user}:{user:User|null}){
           <span className="hero-blob hero-blob-2"/>
           <Phone className="phone-a"><ScreenTimeline/></Phone>
           <Phone className="phone-b"><ScreenPact/></Phone>
+          <PacteCard/>
         </div>
       </div>
     </main>
@@ -170,67 +239,39 @@ function Home({user}:{user:User|null}){
 
     <div className="display-head"><h2>Signer<span className="dh-dot dh-mint"/><br/>ensemble</h2></div>
 
-    <section className="band band-mint">
-      <div className="band-inner">
-        <div className="band-intro">
-          <span className="band-label">Le PACTE</span>
-          <h3>Un accord, deux signatures.</h3>
-          <p>Tant qu’il en manque une, rien n’est engagé.</p>
-        </div>
-
-        <div className="feature">
-          <div className="feature-media"><Phone><ScreenForm/></Phone></div>
-          <div className="feature-copy">
-            <h4>Proposez.<br/><span>En quelques champs.</span></h4>
-            <p>La prestation, les horaires, le montant et l’acompte. Le couple comme le prestataire peuvent être à l’initiative de l’accord.</p>
-          </div>
-        </div>
-
-        <div className="feature reverse">
-          <div className="feature-media"><Phone><ScreenPact/></Phone></div>
-          <div className="feature-copy">
-            <h4>Signé des deux côtés,<br/><span>ou rien du tout.</span></h4>
-            <p>Chaque signature est horodatée. Une fois les deux enregistrées, le document est figé : plus aucune modification directe n’est possible.</p>
-          </div>
-        </div>
-
-        <div className="feature">
-          <div className="feature-media"><Phone><ScreenPactList/></Phone></div>
-          <div className="feature-copy">
-            <h4>Chaque statut<br/><span>est dit clairement.</span></h4>
-            <p>À confirmer, signature attendue, signé, annulé. Personne n’a besoin de relancer pour savoir où en est un accord.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <StickyBand
+      tone="mint"
+      label="Le PACTE"
+      title="Un accord, deux signatures."
+      intro="Tant qu’il en manque une, rien n’est engagé."
+      steps={[
+        {title:<>Proposez.<br/><span>En quelques champs.</span></>,
+         body:'La prestation, les horaires, le montant et l’acompte. Le couple comme le prestataire peuvent être à l’initiative de l’accord.',
+         screen:<ScreenForm/>},
+        {title:<>Signé des deux côtés,<br/><span>ou rien du tout.</span></>,
+         body:'Chaque signature est horodatée. Une fois les deux enregistrées, le document est figé : plus aucune modification directe n’est possible.',
+         screen:<ScreenPact/>},
+        {title:<>Chaque statut<br/><span>est dit clairement.</span></>,
+         body:'À confirmer, signature attendue, signé, annulé. Personne n’a besoin de relancer pour savoir où en est un accord.',
+         screen:<ScreenPactList/>},
+      ]}/>
 
     <div className="display-head"><h2>Suivre<span className="dh-dot dh-blush"/><br/>le jour J</h2></div>
 
-    <section className="band band-blush">
-      <div className="band-inner">
-        <div className="band-intro">
-          <span className="band-label">La Timeline</span>
-          <h3>Le déroulé se remplit tout seul.</h3>
-          <p>Un PACTE signé devient une ligne de la journée.</p>
-        </div>
-
-        <div className="feature">
-          <div className="feature-media"><Phone><ScreenTimeline/></Phone></div>
-          <div className="feature-copy">
-            <h4>Le jour J,<br/><span>heure par heure.</span></h4>
-            <p>Vos moments et vos prestations signées sur une seule ligne de temps. Les propositions non signées n’y figurent pas.</p>
-          </div>
-        </div>
-
-        <div className="feature reverse">
-          <div className="feature-media"><Phone><ScreenProvider/></Phone></div>
-          <div className="feature-copy">
-            <h4>Côté prestataire<br/><span>aussi.</span></h4>
-            <p>Le prestataire retrouve ses engagements signés, toutes dates confondues, et ce qui attend encore sa signature.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <StickyBand
+      tone="blush"
+      reverse
+      label="La Timeline"
+      title="Le déroulé se remplit tout seul."
+      intro="Un PACTE signé devient une ligne de la journée."
+      steps={[
+        {title:<>Le jour J,<br/><span>heure par heure.</span></>,
+         body:'Vos moments et vos prestations signées sur une seule ligne de temps. Les propositions non signées n’y figurent pas.',
+         screen:<ScreenTimeline/>},
+        {title:<>Côté prestataire<br/><span>aussi.</span></>,
+         body:'Le prestataire retrouve ses engagements signés, toutes dates confondues, et ce qui attend encore sa signature.',
+         screen:<ScreenProvider/>},
+      ]}/>
 
     <section className="why">
       <div className="why-inner">

@@ -283,23 +283,6 @@ p { line-height: 1.65; }
 .band-intro h3 { font-size: clamp(30px, 3.6vw, 44px); letter-spacing: -0.045em; margin: 12px 0 12px; }
 .band-intro p { font-size: 16px; color: rgba(13, 13, 15, 0.62); }
 
-.feature {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 48px; align-items: center; padding: 48px 0;
-}
-.feature-media { display: flex; justify-content: center; }
-.feature.reverse .feature-media { order: 2; }
-.feature-copy { max-width: 400px; }
-.feature.reverse .feature-copy { margin-left: auto; }
-.feature-copy h4 {
-  font-size: clamp(26px, 3.1vw, 38px); font-weight: 700;
-  letter-spacing: -0.045em; line-height: 1.06; margin-bottom: 14px;
-}
-.feature-copy h4 span { color: rgba(13, 13, 15, 0.42); }
-.feature-copy p { font-size: 15.5px; line-height: 1.62; color: rgba(13, 13, 15, 0.66); }
-.feature-media .phone { transform: rotate(-4deg); }
-.feature.reverse .feature-media .phone { transform: rotate(4deg); }
-
 /* --- marketing: iphone frame ---------------------------------------------- */
 .phone {
   --w: 258px;
@@ -1035,6 +1018,68 @@ p { line-height: 1.65; }
   .modal-form { padding: 20px; }
 }
 
+
+/* --- marketing: bande à défilement fixé ----------------------------------- */
+.sticky-band { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.sticky-band.rev .sticky-media { order: 2; }
+.sticky-steps { min-width: 0; }
+.sticky-media {
+  position: sticky; top: 104px;
+  display: flex; justify-content: center; padding: 30px 0;
+}
+.sticky-media .phone { transform: rotate(-4deg); }
+.sticky-band.rev .sticky-media .phone { transform: rotate(4deg); }
+.scr-layer {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  opacity: 0; transition: opacity 0.45s ease; pointer-events: none;
+}
+.scr-layer.on { opacity: 1; }
+.sticky-step {
+  min-height: 74vh; display: flex; flex-direction: column; justify-content: center;
+  opacity: 0.4; transition: opacity 0.4s ease;
+}
+.sticky-step.on { opacity: 1; }
+.sticky-step h4 {
+  font-size: clamp(26px, 3.1vw, 38px); font-weight: 700;
+  letter-spacing: -0.045em; line-height: 1.06; margin-bottom: 14px;
+}
+.sticky-step h4 span { color: rgba(13, 13, 15, 0.42); }
+.sticky-step p { font-size: 15.5px; line-height: 1.62; color: rgba(13, 13, 15, 0.66); max-width: 42ch; }
+.sticky-step-phone { display: none; }
+@media (prefers-reduced-motion: reduce) { .sticky-step { opacity: 1; } }
+
+/* --- marketing: carte de marque 3D ---------------------------------------- */
+.pacte-card {
+  --rx: 0deg; --ry: 0deg;
+  position: absolute; z-index: 3;
+  left: 2%; bottom: 6px; width: 214px; aspect-ratio: 1.586;
+  perspective: 900px; transform: rotate(-9deg);
+  animation: card-float 7s ease-in-out infinite;
+}
+.pacte-card-inner {
+  height: 100%; border-radius: 15px; padding: 15px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background:
+    linear-gradient(135deg, var(--mint) 0%, #e8e6e6 46%, var(--blush) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 26px 46px -14px rgba(13, 13, 15, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.25s ease-out;
+}
+.pc-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.pc-brand { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; letter-spacing: -0.05em; color: var(--ink); }
+.pc-brand b { width: 12px; height: 12px; border: 1.4px solid var(--ink); border-radius: 4px; display: inline-block; }
+.pc-brand i { font-style: normal; color: var(--accent); }
+.pc-chip {
+  width: 28px; height: 21px; border-radius: 5px;
+  background: linear-gradient(140deg, #e4cf92, #bfa966 60%, #e8d9a6);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.pc-foot { display: flex; gap: 12px; font-size: 9px; font-weight: 600; color: rgba(13, 13, 15, 0.62); }
+.pc-foot span { display: inline-flex; align-items: center; gap: 4px; }
+@keyframes card-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+@media (prefers-reduced-motion: reduce) { .pacte-card { animation: none; } }
+
 /* --- marketing responsive ------------------------------------------------- */
 @media (max-width: 1040px) {
   .hero-inner { grid-template-columns: 1fr; gap: 0; }
@@ -1042,6 +1087,12 @@ p { line-height: 1.65; }
   .hero-stage .phone-a { left: 2%; }
   .hero-stage .phone-b { right: 2%; }
   .how-grid { grid-template-columns: repeat(2, 1fr); }
+  .sticky-band, .sticky-band.rev { grid-template-columns: 1fr; gap: 0; }
+  .sticky-media { display: none; }
+  .sticky-step { min-height: 0; padding: 34px 0; opacity: 1; text-align: center; }
+  .sticky-step-phone { display: flex; justify-content: center; margin-bottom: 26px; }
+  .sticky-step p { margin: 0 auto; }
+  .pacte-card { left: auto; right: 4%; bottom: 0; }
 }
 
 @media (max-width: 760px) {
@@ -1059,11 +1110,9 @@ p { line-height: 1.65; }
   .statement-inner { padding: 64px var(--gutter); }
   .display-head { padding: 68px var(--gutter) 44px; }
   .band { padding: 54px 0 64px; }
-  .feature { grid-template-columns: 1fr; gap: 30px; padding: 32px 0; text-align: center; }
-  .feature.reverse .feature-media { order: 0; }
-  .feature-copy, .feature.reverse .feature-copy { margin: 0 auto; }
-  .feature-media .phone, .feature.reverse .feature-media .phone { transform: none; }
   .phone { --w: 236px; }
+  .sticky-step-phone .phone { transform: none; }
+  .pacte-card { width: 168px; right: 2%; }
 
   .why { padding: 68px 0; }
   .why h2, .how h2 { margin-bottom: 34px; }
